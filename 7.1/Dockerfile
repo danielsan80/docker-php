@@ -1,5 +1,11 @@
 FROM debian:buster
 
+ARG HOST_UID
+ARG HOST_GID
+
+ENV HOST_UID ${HOST_UID:-1000}
+ENV HOST_GID ${HOST_GID:-1000}
+
 RUN apt-get update && apt-get install -y software-properties-common  \
       build-essential pkg-config make git g++ gcc \
       libmemcached-dev libmsgpack-dev libmsgpackc2 zlib1g zlib1g-dev \
@@ -71,14 +77,20 @@ RUN ln -s /etc/php/7.1/mods-available/memcached.ini /etc/php/7.1/cli/conf.d/20-m
 RUN ln -s /etc/php/7.1/mods-available/memcached.ini /etc/php/7.1/fpm/conf.d/20-memcached.ini
 
 
-
-
-
 WORKDIR /var/www/app
 
 # CMD ["/usr/bin/supervisord"]
 
 COPY ./start-container /usr/local/bin/start-container
 RUN chmod +x /usr/local/bin/start-container
+
+#Gestione utente
+RUN mkdir /home/utente
+#Aggiungo all'utente il gruppo
+RUN groupadd -g $HOST_GID utente
+RUN useradd -u $HOST_UID --gid $HOST_GID -d /home/utente -s /bin/bash utente
+RUN usermod -a -G www-data utente
+RUN chown utente /home/utente
+USER utente
 
 CMD ["start-container"]
