@@ -94,4 +94,4 @@ RUN chown utente /home/utente
 CMD ["start-container"]
 
 #https://docs.docker.com/engine/reference/builder/#user
-USER utente
+#USER utente
