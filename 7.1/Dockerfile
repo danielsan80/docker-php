@@ -76,7 +76,6 @@ RUN echo "extension=/usr/local/memcached/memcached.so" > /etc/php/7.1/mods-avail
 RUN ln -s /etc/php/7.1/mods-available/memcached.ini /etc/php/7.1/cli/conf.d/20-memcached.ini
 RUN ln -s /etc/php/7.1/mods-available/memcached.ini /etc/php/7.1/fpm/conf.d/20-memcached.ini
 
-
 WORKDIR /var/www/app
 
 # CMD ["/usr/bin/supervisord"]
@@ -91,6 +90,8 @@ RUN groupadd -g $HOST_GID utente
 RUN useradd -u $HOST_UID --gid $HOST_GID -d /home/utente -s /bin/bash utente
 RUN usermod -a -G www-data utente
 RUN chown utente /home/utente
-USER utente
 
 CMD ["start-container"]
+
+#https://docs.docker.com/engine/reference/builder/#user
+USER utente
