@@ -91,6 +91,8 @@ RUN useradd -u $HOST_UID --gid $HOST_GID -d /home/utente -s /bin/bash utente
 RUN usermod -a -G www-data utente
 RUN chown utente /home/utente
 
+RUN echo 'alias ll="ls -alFh"' >> /home/utente/.bashrc
+
 CMD ["start-container"]
 
 #https://docs.docker.com/engine/reference/builder/#user
