@@ -20,15 +20,21 @@ RUN apt-get update && apt-get install -y software-properties-common  \
       php-zip \
       php-sqlite3 \
       git \
+      vim vim-gtk3 \
       && mkdir /run/php \
       && apt-get remove --purge -y software-properties-common \
       && apt-get autoremove -y \
       && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Composer
-RUN curl -sS https://getcomposer.org/installer | php \
-        && mv composer.phar /usr/local/bin/ \
-        && ln -s /usr/local/bin/composer.phar /usr/local/bin/composer
+# RUN curl -sS https://getcomposer.org/installer | php \
+#         && mv composer.phar /usr/local/bin/ \
+#         && ln -s /usr/local/bin/composer.phar /usr/local/bin/composer
+RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
+&& curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \
+&& php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php')) !== trim(file_get_contents('/tmp/composer-setup.sig'))) { unlink('/tmp/composer-setup.php'); echo 'Invalid installer' . PHP_EOL; exit(1); }" \
+&& php /tmp/composer-setup.php --no-ansi --install-dir=/usr/local/bin --filename=composer --snapshot \
+&& rm -f /tmp/composer-setup.*
 
 COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
