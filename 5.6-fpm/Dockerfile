@@ -8,6 +8,7 @@ ENV HOST_GID ${HOST_GID:-1000}
 
 RUN apt-get update && apt-get install -y \
    wget curl aptitude software-properties-common \
+   supervisor acl \
    vim vim-gtk \
    php5-fpm \
    php5-apcu \
@@ -25,6 +26,21 @@ RUN apt-get update && apt-get install -y \
    && apt-get remove --purge -y software-properties-common \
    && apt-get autoremove -y \
    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Configure PHP settings
+RUN sed -i "s/display_errors = Off/display_errors = On/" /etc/php5/fpm/php.ini
+RUN sed -i "s/display_errors = Off/display_errors = On/" /etc/php5/cli/php.ini
+
+RUN sed -i -e 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php5/fpm/php.ini
+RUN sed -i -e 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php5/cli/php.ini
+
+RUN sed -i -e 's/allow_url_fopen = Off/allow_url_fopen = On/g' /etc/php5/fpm/php.ini
+#RUN sed -i -e 's/expose_php = On/expose_php = Off/g' /etc/php5/fpm/php.ini
+
+RUN sed -i -e 's/listen = \/var\/run\/php5-fpm.sock/listen = 0.0.0.0:9000/g' /etc/php5/fpm/pool.d/www.conf \
+    && sed -i -e 's/;daemonize = yes/daemonize = no/g' /etc/php5/fpm/php-fpm.conf
 
 #Composer
 RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
@@ -50,5 +66,6 @@ WORKDIR /var/www/app
 
 RUN echo 'alias ll="ls -alFh"' >> /home/utente/.bashrc
 
-EXPOSE 9000
-# CMD ["/usr/local/sbin/php-fpm", "--nodaemonize"]
+##EXPOSE 9000
+
+CMD ["/usr/bin/supervisord"]
