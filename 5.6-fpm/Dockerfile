@@ -42,6 +42,9 @@ RUN sed -i -e 's/allow_url_fopen = Off/allow_url_fopen = On/g' /etc/php5/fpm/php
 RUN sed -i -e 's/listen = \/var\/run\/php5-fpm.sock/listen = 0.0.0.0:9000/g' /etc/php5/fpm/pool.d/www.conf \
     && sed -i -e 's/;daemonize = yes/daemonize = no/g' /etc/php5/fpm/php-fpm.conf
 
+RUN sed -i -e 's/;date.timezone =/date.timezone = "Europe\/Rome"/g' /etc/php5/fpm/php.ini
+RUN sed -i -e 's/;date.timezone =/date.timezone = "Europe\/Rome"/g' /etc/php5/cli/php.ini
+
 #Composer
 RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
 && curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \
