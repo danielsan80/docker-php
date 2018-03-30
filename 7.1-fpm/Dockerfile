@@ -96,6 +96,10 @@ RUN chown utente /home/utente
 
 RUN echo 'alias ll="ls -alFh"' >> /home/utente/.bashrc
 
+#Faccio girare nginx con l'utente "normale"
+RUN sed -i "s/user = www-data/user = utente/" /etc/php/7.1/fpm/pool.d/www.conf && \
+    sed -i "s/group = www-data/group = utente/" /etc/php/7.1/fpm/pool.d/www.conf
+
 CMD ["start-container"]
 
 #https://docs.docker.com/engine/reference/builder/#user

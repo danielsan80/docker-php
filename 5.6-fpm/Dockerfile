@@ -69,6 +69,10 @@ WORKDIR /var/www/app
 
 RUN echo 'alias ll="ls -alFh"' >> /home/utente/.bashrc
 
+#Faccio girare nginx con l'utente "normale"
+RUN sed -i "s/user = www-data/user = utente/" /etc/php5/fpm/pool.d/www.conf && \
+    sed -i "s/group = www-data/group = utente/" /etc/php5/fpm/pool.d/www.conf
+
 ##EXPOSE 9000
 
 CMD ["/usr/bin/supervisord"]
