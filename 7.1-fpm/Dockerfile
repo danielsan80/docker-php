@@ -1,5 +1,7 @@
 FROM debian:buster
 
+LABEL mantainer="m.galacci@gmail.com"
+
 ARG HOST_UID
 ARG HOST_GID
 
@@ -25,40 +27,33 @@ RUN apt-get update && apt-get install -y software-properties-common  \
 
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-RUN sed -i "s/display_errors = Off/display_errors = On/" /etc/php/7.1/fpm/php.ini
-RUN sed -i "s/display_errors = Off/display_errors = On/" /etc/php/7.1/cli/php.ini
-
-RUN sed -i -e 's/listen = \/run\/php\/php7.1-fpm.sock/listen = 0.0.0.0:9000/g' /etc/php/7.1/fpm/pool.d/www.conf \
-    && sed -i -e 's/;daemonize = yes/daemonize = no/g' /etc/php/7.1/fpm/php-fpm.conf
-
-RUN sed -i -e 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php/7.1/fpm/php.ini
-RUN sed -i -e 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php/7.1/cli/php.ini
-
-RUN sed -i -e 's/;date.timezone =/date.timezone = "Europe\/Rome"/g' /etc/php/7.1/fpm/php.ini
-RUN sed -i -e 's/;date.timezone =/date.timezone = "Europe\/Rome"/g' /etc/php/7.1/cli/php.ini
+RUN sed -i "s/display_errors = Off/display_errors = On/" /etc/php/7.1/fpm/php.ini \
+    && sed -i "s/display_errors = Off/display_errors = On/" /etc/php/7.1/cli/php.ini \
+    && sed -i -e 's/listen = \/run\/php\/php7.1-fpm.sock/listen = 0.0.0.0:9000/g' /etc/php/7.1/fpm/pool.d/www.conf \
+    && sed -i -e 's/;daemonize = yes/daemonize = no/g' /etc/php/7.1/fpm/php-fpm.conf \
+    && sed -i -e 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php/7.1/fpm/php.ini \
+    && sed -i -e 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php/7.1/cli/php.ini \
+    && sed -i -e 's/;date.timezone =/date.timezone = "Europe\/Rome"/g' /etc/php/7.1/fpm/php.ini \
+    && sed -i -e 's/;date.timezone =/date.timezone = "Europe\/Rome"/g' /etc/php/7.1/cli/php.ini
 
 # Composer
-# RUN curl -sS https://getcomposer.org/installer | php \
-#         && mv composer.phar /usr/local/bin/ \
-#         && ln -s /usr/local/bin/composer.phar /usr/local/bin/composer
 RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
-&& curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \
-&& php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php')) !== trim(file_get_contents('/tmp/composer-setup.sig'))) { unlink('/tmp/composer-setup.php'); echo 'Invalid installer' . PHP_EOL; exit(1); }" \
-&& php /tmp/composer-setup.php --no-ansi --install-dir=/usr/local/bin --filename=composer --snapshot \
-&& rm -f /tmp/composer-setup.*
+    && curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \
+    && php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php')) !== trim(file_get_contents('/tmp/composer-setup.sig'))) { unlink('/tmp/composer-setup.php'); echo 'Invalid installer' . PHP_EOL; exit(1); }" \
+    && php /tmp/composer-setup.php --no-ansi --install-dir=/usr/local/bin --filename=composer --snapshot \
+    && rm -f /tmp/composer-setup.*
 
 #Xdebug
-RUN cd /root/ && git clone https://github.com/xdebug/xdebug.git && cd xdebug \
-   && phpize \
-   && ./configure --enable-xdebug \
-   && make \
-   && mv modules/ /usr/local/xdebug \
-   && cd /root \
-   && rm -fr xdebug
-
-#Configuro Xdebug
 COPY xdebug.ini /etc/php/7.1/mods-available/xdebug.ini
-RUN sed -i "s/xdebug\.remote_host=.*/xdebug\.remote_host="$(/sbin/ip route|awk '/default/ { print $3 }')"/" /etc/php/7.1/mods-available/xdebug.ini
+RUN cd /root/ && git clone https://github.com/xdebug/xdebug.git && cd xdebug \
+    && phpize \
+    && ./configure --enable-xdebug \
+    && make \
+    && mv modules/ /usr/local/xdebug \
+    && cd /root \
+    && rm -fr xdebug \
+    && sed -i "s/xdebug\.remote_host=.*/xdebug\.remote_host="$(/sbin/ip route|awk '/default/ { print $3 }')"/" /etc/php/7.1/mods-available/xdebug.ini
+
 ENV PHP_IDE_CONFIG=serverName=application
 
 #RUN ln -s /etc/php/7.1/mods-available/xdebug.ini /etc/php/7.1/cli/conf.d/20-xdebug.ini
@@ -68,35 +63,29 @@ ENV PHP_IDE_CONFIG=serverName=application
 
 #Configuro memcached
 RUN cd /root/ && git clone --depth 1 https://github.com/php-memcached-dev/php-memcached.git && cd php-memcached \
-   && phpize \
-   && ./configure && make \
-   && mv modules/ /usr/local/memcached \
-   && cd /root \
-   && rm -fr php-memcached
-
-#Configuro Phpmemcached
-RUN echo "extension=/usr/local/memcached/memcached.so" > /etc/php/7.1/mods-available/memcached.ini
-RUN ln -s /etc/php/7.1/mods-available/memcached.ini /etc/php/7.1/cli/conf.d/20-memcached.ini
-RUN ln -s /etc/php/7.1/mods-available/memcached.ini /etc/php/7.1/fpm/conf.d/20-memcached.ini
-
-WORKDIR /var/www/app
-
-# CMD ["/usr/bin/supervisord"]
+    && phpize \
+    && ./configure && make \
+    && mv modules/ /usr/local/memcached \
+    && cd /root \
+    && rm -fr php-memcached \
+    && echo "extension=/usr/local/memcached/memcached.so" > /etc/php/7.1/mods-available/memcached.ini \
+    && ln -s /etc/php/7.1/mods-available/memcached.ini /etc/php/7.1/cli/conf.d/20-memcached.ini \
+    && ln -s /etc/php/7.1/mods-available/memcached.ini /etc/php/7.1/fpm/conf.d/20-memcached.ini
 
 COPY ./start-container /usr/local/bin/start-container
 RUN chmod +x /usr/local/bin/start-container
 
 #Gestione utente
-RUN mkdir /home/utente
-#Aggiungo all'utente il gruppo
-RUN groupadd -g $HOST_GID utente
-RUN useradd -u $HOST_UID --gid $HOST_GID -d /home/utente -s /bin/bash utente
-RUN usermod -a -G www-data utente
-RUN chown utente /home/utente
+RUN mkdir /home/utente \
+    && groupadd -g $HOST_GID utente \
+    && useradd -u $HOST_UID --gid $HOST_GID -d /home/utente -s /bin/bash utente \
+    && usermod -a -G www-data utente \
+    && chown utente /home/utente \
+    && echo 'alias ll="ls -alFh"' >> /home/utente/.bashrc
 
-RUN echo 'alias ll="ls -alFh"' >> /home/utente/.bashrc
+WORKDIR /var/www/app
 
-#Faccio girare nginx con l'utente "normale"
+#Faccio girare nginx con l'utente non root
 RUN sed -i "s/user = www-data/user = utente/" /etc/php/7.1/fpm/pool.d/www.conf && \
     sed -i "s/group = www-data/group = utente/" /etc/php/7.1/fpm/pool.d/www.conf
 
