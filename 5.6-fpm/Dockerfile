@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM debian:jessie-slim
 
 LABEL mantainer="m.galacci@gmail.com"
 
@@ -56,7 +56,9 @@ COPY xdebug.ini /etc/php5/mods-available/xdebug.ini
 RUN sed -i "s/xdebug\.remote_host=.*/xdebug\.remote_host="$(/sbin/ip route|awk '/default/ { print $3 }')"/" /etc/php5/mods-available/xdebug.ini
 ENV PHP_IDE_CONFIG=serverName=application
 
+
 #Gestione utente
+#https://docs.docker.com/engine/reference/builder/#user
 RUN mkdir /home/utente \
     && groupadd -g $HOST_GID utente \
     && useradd -u $HOST_UID --gid $HOST_GID -d /home/utente -s /bin/bash utente \
@@ -66,7 +68,7 @@ RUN mkdir /home/utente \
 
 WORKDIR /var/www/app
 
-#Faccio girare nginx con l'utente non root
+#Faccio girare php-fpm come `utente`
 RUN sed -i "s/user = www-data/user = utente/" /etc/php5/fpm/pool.d/www.conf && \
     sed -i "s/group = www-data/group = utente/" /etc/php5/fpm/pool.d/www.conf
 

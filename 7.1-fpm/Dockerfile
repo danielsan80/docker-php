@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM debian:buster-slim
 
 LABEL mantainer="m.galacci@gmail.com"
 
@@ -76,6 +76,7 @@ COPY ./start-container /usr/local/bin/start-container
 RUN chmod +x /usr/local/bin/start-container
 
 #Gestione utente
+#https://docs.docker.com/engine/reference/builder/#user
 RUN mkdir /home/utente \
     && groupadd -g $HOST_GID utente \
     && useradd -u $HOST_UID --gid $HOST_GID -d /home/utente -s /bin/bash utente \
@@ -85,11 +86,8 @@ RUN mkdir /home/utente \
 
 WORKDIR /var/www/app
 
-#Faccio girare nginx con l'utente non root
+#Faccio girare php-fpm come `utente`
 RUN sed -i "s/user = www-data/user = utente/" /etc/php/7.1/fpm/pool.d/www.conf && \
     sed -i "s/group = www-data/group = utente/" /etc/php/7.1/fpm/pool.d/www.conf
 
 CMD ["start-container"]
-
-#https://docs.docker.com/engine/reference/builder/#user
-#USER utente
