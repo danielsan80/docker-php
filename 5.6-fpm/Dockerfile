@@ -10,6 +10,7 @@ ENV HOST_GID ${HOST_GID:-1000}
 
 RUN apt-get update && apt-get install -y \
     wget curl aptitude software-properties-common \
+    iproute2 \
     supervisor acl \
     vim vim-gtk \
     php5-fpm \

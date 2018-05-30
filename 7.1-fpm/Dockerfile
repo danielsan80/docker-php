@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y software-properties-common  \
       libmemcached-dev libmsgpack-dev libmsgpackc2 zlib1g zlib1g-dev \
       vim vim-gtk3 \
       supervisor acl \
+      iproute2 \
       php7.1 php7.1-fpm php7.1-bcmath \
       php7.1-intl \
       php7.1-bz2 php7.1-cgi php7.1-cli \
