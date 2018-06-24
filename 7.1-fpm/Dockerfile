@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y software-properties-common  \
       vim vim-gtk3 \
       supervisor acl \
       iproute2 \
+      php-xdebug \
+      php-memcached \
       php7.1 php7.1-fpm php7.1-bcmath \
       php7.1-intl \
       php7.1-bz2 php7.1-cgi php7.1-cli \
@@ -35,43 +37,15 @@ RUN sed -i "s/display_errors = Off/display_errors = On/" /etc/php/7.1/fpm/php.in
     && sed -i -e 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php/7.1/fpm/php.ini \
     && sed -i -e 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' /etc/php/7.1/cli/php.ini \
     && sed -i -e 's/;date.timezone =/date.timezone = "Europe\/Rome"/g' /etc/php/7.1/fpm/php.ini \
-    && sed -i -e 's/;date.timezone =/date.timezone = "Europe\/Rome"/g' /etc/php/7.1/cli/php.ini
-
-# Composer
-RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
-    && curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \
-    && php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php')) !== trim(file_get_contents('/tmp/composer-setup.sig'))) { unlink('/tmp/composer-setup.php'); echo 'Invalid installer' . PHP_EOL; exit(1); }" \
-    && php /tmp/composer-setup.php --no-ansi --install-dir=/usr/local/bin --filename=composer --snapshot \
-    && rm -f /tmp/composer-setup.*
+    && sed -i -e 's/;date.timezone =/date.timezone = "Europe\/Rome"/g' /etc/php/7.1/cli/php.ini \
+    && curl -sS https://getcomposer.org/installer | php \
+    && mv composer.phar /usr/local/bin/composer
 
 #Xdebug
 COPY xdebug.ini /etc/php/7.1/mods-available/xdebug.ini
-RUN cd /root/ && git clone https://github.com/xdebug/xdebug.git && cd xdebug \
-    && phpize \
-    && ./configure --enable-xdebug \
-    && make \
-    && mv modules/ /usr/local/xdebug \
-    && cd /root \
-    && rm -fr xdebug \
-    && sed -i "s/xdebug\.remote_host=.*/xdebug\.remote_host="$(/sbin/ip route|awk '/default/ { print $3 }')"/" /etc/php/7.1/mods-available/xdebug.ini
-
+RUN sed -i "s/xdebug\.remote_host=.*/xdebug\.remote_host="$(/sbin/ip route|awk '/default/ { print $3 }')"/" /etc/php/7.1/mods-available/xdebug.ini \
+    && sed -i "s|zend_extension=xdebug.so|zend_extension=$(find / -iname xdebug.so 2>&1 | grep -v 'Permission denied' | head -1)|" /etc/php/7.1/mods-available/xdebug.ini
 ENV PHP_IDE_CONFIG=serverName=application
-
-#RUN ln -s /etc/php/7.1/mods-available/xdebug.ini /etc/php/7.1/cli/conf.d/20-xdebug.ini
-#RUN ln -s /etc/php/7.1/mods-available/xdebug.ini /etc/php/7.1/fpm/conf.d/20-xdebug.ini
-#RUN sed -i -e 's/xdebug.so/\/usr\/local\/xdebug\/xdebug.so/g' /etc/php/7.1/mods-available/xdebug.ini
-
-
-#Configuro memcached
-RUN cd /root/ && git clone --depth 1 https://github.com/php-memcached-dev/php-memcached.git && cd php-memcached \
-    && phpize \
-    && ./configure && make \
-    && mv modules/ /usr/local/memcached \
-    && cd /root \
-    && rm -fr php-memcached \
-    && echo "extension=/usr/local/memcached/memcached.so" > /etc/php/7.1/mods-available/memcached.ini \
-    && ln -s /etc/php/7.1/mods-available/memcached.ini /etc/php/7.1/cli/conf.d/20-memcached.ini \
-    && ln -s /etc/php/7.1/mods-available/memcached.ini /etc/php/7.1/fpm/conf.d/20-memcached.ini
 
 COPY ./start-container /usr/local/bin/start-container
 RUN chmod +x /usr/local/bin/start-container
