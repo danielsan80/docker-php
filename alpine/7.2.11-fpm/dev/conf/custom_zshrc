@@ -1,0 +1,3 @@
+#Alias
+alias app="cd /var/www/app"
+alias ll="ls -alhF"
