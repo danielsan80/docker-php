@@ -8,14 +8,14 @@ RUN apk --no-cache add \
     vim \
     wget \
     curl \
-    zsh    
-
-RUN apk add --no-cache --virtual .xdebug-build-deps $PHPIZE_DEPS \
+    zsh \   
+    && apk add --no-cache --virtual .xdebug-build-deps $PHPIZE_DEPS \
     && pecl install -o xdebug \
     && docker-php-ext-enable xdebug \
     && apk del .xdebug-build-deps \
     && pecl clear-cache \
-    && docker-php-source delete
+    && docker-php-source delete \
+    && echo 'memory_limit = 512M' >> /usr/local/etc/php/conf.d/docker-php-memlimit.ini;
 
 COPY conf/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 

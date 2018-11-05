@@ -32,11 +32,11 @@ RUN apk add --no-cache \
 
 WORKDIR /var/www/app
 
-RUN adduser -D -u 1000 utente -G www-data \
-    && mkdir -p /home/utente \
+RUN adduser -D -u 1000 utente \
+    && adduser utente www-data \
     && chown -R utente /home/utente \
     && chown -R utente /var/www/app \
- ## Composer
+    ## Composer
     && curl -sS https://getcomposer.org/installer | php -- \
         --install-dir=/usr/local/bin --filename=composer \
         --version 1.7.2
